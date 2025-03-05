@@ -38,7 +38,22 @@ RUN rm /tmp/schema.sql
 
 
 # Copy postfix config files
-COPY src/postfix/master.cf /etc/postfix/
+COPY src/postfix/. /etc/postfix/
+COPY src/dovecot/. /etc/dovecot/
+
+## hash files
+# hash vmail_ssl.map text config
+#COPY src/postfix/vmail_ssl.map /etc/postfix/
+RUN postmap /etc/postfix/vmail_ssl.map
+RUN rm /etc/postfix/vmail_ssl.map
+# hash vmaps text
+#COPY src/postfix/vmaps /etc/postfix/
+RUN postmap /etc/postfix/vmaps
+RUN rm /etc/postfix/vmaps
+# hash sasl_passwd text
+#COPY src/postfix/sasl_passwd /etc/postfix/
+RUN postmap /etc/postfix/sasl_passwd
+RUN rm /etc/postfix/sasl_passwd
 
 # Test test test
 #USER ubuntu
