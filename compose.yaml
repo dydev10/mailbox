@@ -3,11 +3,12 @@ services:
     image: dydev20/mailbox:latest
     build: .
     command: tail -f /dev/null  # Keeps the container alive
+    #command: service postfix start ; service dovecot start ; tail -f /dev/null    # Keeps the container alive
     ports:
       - "25:25"
       - "143:143"
       - "587:587"
-    #    restart: always
+    #restart: always
     volumes:
       - /etc/letsencrypt/live:/etc/letsencrypt/live:ro
       - /etc/letsencrypt/archive:/etc/letsencrypt/archive:ro

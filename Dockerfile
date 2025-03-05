@@ -3,6 +3,10 @@ FROM ubuntu:24.04
 # Set hostname
 RUN echo "gcp.dydev.art" > /etc/hostname
 
+## install r syslog
+#RUN apt update
+#RUN apt install -y rsyslog
+
 # Install mailbox server dependencies
 RUN apt update
 RUN apt install -y sqlite3 postfix dovecot-core dovecot-imapd dovecot-pop3d
@@ -57,7 +61,11 @@ RUN rm /etc/postfix/sasl_passwd
 COPY src/dovecot/passwd /etc/dovecot/
 ##
 
-# Test test test
+## Start services Command
+#CMD service postfix start ; service dovecot start
+##
+
+## Test test test
 #USER ubuntu
 #WORKDIR /home/ubuntu
 #COPY --chown=ubuntu hello.txt ./
