@@ -1,0 +1,117 @@
+# See /usr/share/postfix/main.cf.dist for a commented, more complete version
+
+
+# Debian specific:  Specifying a file name will cause the first
+# line of that file to be used as the name.  The Debian default
+# is /etc/mailname.
+#myorigin = /etc/mailname
+
+smtpd_banner = $myhostname ESMTP $mail_name (Ubuntu)
+biff = no
+
+# appending .domain is the MUA's job.
+append_dot_mydomain = no
+
+# Uncomment the next line to generate "delayed mail" warnings
+#delay_warning_time = 4h
+
+readme_directory = no
+
+# See http://www.postfix.org/COMPATIBILITY_README.html -- default to 3.6 on
+# fresh installs.
+compatibility_level = 3.6
+
+#
+# ---START config
+#
+smtp_tls_session_cache_database = btree:${data_directory}/smtp_scache
+smtpd_tls_session_cache_database = btree:${data_directory}/smtpd_scache
+
+# (Sender)
+#
+# TLS certs
+#smtp_tls_CApath=/etc/ssl/certs
+#smtp_tls_security_level=may
+# SMTP auth parameters
+smtp_tls_security_level = may
+smtp_sasl_auth_enable = yes
+smtp_sasl_password_maps = hash:/etc/postfix/sasl_passwd
+smtp_sasl_security_options = noanonymous
+smtp_tls_note_starttls_offer = yes
+# params for sender
+#maximal_queue_lifetime = 0
+#
+# ...end (Sender) Setup
+
+
+# Core Mail Server
+#
+# Domain setup
+myhostname = gcp.dydev.art
+alias_maps = hash:/etc/aliases
+alias_database = hash:/etc/aliases
+#myorigin = /etc/mailname
+#mydestination = $myhostname, $myorigin, localhost.dydev.art, localhost
+myorigin = localhost
+mydestination = localhost
+# Network and Relay config
+relayhost = [smtp.mailgun.org]:2525
+mynetworks = 127.0.0.0/8 [::ffff:127.0.0.0]/104 [::1]/128
+mailbox_size_limit = 0
+recipient_delimiter = +
+inet_interfaces = all
+inet_protocols = all
+#
+# ...end Server Setup
+
+
+# Mailbox setup
+#
+# MailDir format
+home_mailbox = Maildir/
+mailbox_transport = lmtp:unix:private/dovecot-lmtp
+# Virtual mails
+virtual_mailbox_domains = dydev.art # more domain here comma seperated
+virtual_mailbox_base = /home/vmail
+virtual_mailbox_maps = hash:/etc/postfix/vmaps
+virtual_transport = lmtp:unix:private/dovecot-lmtp
+virtual_minimum_uid = 100
+virtual_uid_maps = static:5000
+virtual_gid_maps = static:5000
+#
+# ...end Mailbox setup
+
+
+# (Receiver)
+#
+# SMTPD Auth
+smtpd_sasl_type = dovecot
+smtpd_sasl_path = private/auth
+smtpd_sasl_local_domain = 
+smtpd_sasl_security_options = noanonymous
+#smtpd_sasl_tls_security_options = noanonymous
+broken_sasl_auth_clients = yes
+smtpd_sasl_auth_enable = yes
+smtpd_recipient_restrictions = permit_sasl_authenticated,permit_mynetworks,reject_unauth_destination
+#smtpd_relay_restrictions = permit_mynetworks,permit_sasl_authenticated,defer_unauth_destination
+# Configure TLS
+#smtpd_tls_CAfile = /etc/letsencrypt/live/gcp.dydev.art/chain.pem
+#smtpd_tls_key_file = /etc/letsencrypt/live/gcp.dydev.art/privkey.pem
+#smtpd_tls_cert_file = /etc/letsencrypt/live/gcp.dydev.art/fullchain.pem
+smtpd_tls_chain_files = /etc/letsencrypt/live/gcp.dydev.art/privkey.pem, /etc/letsencrypt/live/gcp.dydev.art/fullchain.pem
+smtpd_tls_security_level = may
+smtpd_tls_loglevel = 1
+smtpd_tls_received_header = yes
+#
+# ...end SMTPD Setup
+
+#
+# SNI setup
+#
+tls_server_sni_maps = hash:/etc/postfix/vmail_ssl.map
+#
+# ..end SNI setup
+
+#
+# ---END config
+#
