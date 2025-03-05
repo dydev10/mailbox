@@ -1,0 +1,14 @@
+services:
+  mailbox:
+    image: dydev20/mailbox:latest
+    build: .
+    command: tail -f /dev/null  # Keeps the container alive
+    ports:
+      - "25:25"
+      - "143:143"
+      - "587:587"
+    #    restart: always
+    volumes:
+      - /etc/letsencrypt/live:/etc/letsencrypt/live:ro
+      - /etc/letsencrypt/archive:/etc/letsencrypt/archive:ro
+
