@@ -20,8 +20,16 @@ rm /etc/postfix/sasl_passwd
 cp .domains.env/passwd /etc/dovecot/passwd
 ##
 
-## Update hostname in postfix conf
-postconf -e "myhostname=$(hostname)"
+## Update postfix conf from hostname and env
+# Use system hostname passed by --hostname
+mailhost=$(hostname -f)
+# Strip subdomain from hostname to use as main mail domain
+maildomain=$(echo "$mailhost" | awk -F'.' '{ print $(NF-1)"."$NF }')
+# set new postconf
+postconf -e "myhostname=$mailhost"
+postconf -e "virtual_mailbox_domains=$maildomain"
+# Set relay host from passed env file
+
 ##
 
 # Change ownership of vmail

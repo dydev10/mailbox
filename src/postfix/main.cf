@@ -74,13 +74,14 @@ maillog_file = /dev/stdout
 home_mailbox = Maildir/
 mailbox_transport = lmtp:unix:private/dovecot-lmtp
 # Virtual mails
-virtual_mailbox_domains = dydev.art # more domain here comma seperated
 virtual_mailbox_base = /home/vmail
 virtual_mailbox_maps = hash:/etc/postfix/vmaps
 virtual_transport = lmtp:unix:private/dovecot-lmtp
 virtual_minimum_uid = 100
 virtual_uid_maps = static:5000
 virtual_gid_maps = static:5000
+# comma seperated domains
+virtual_mailbox_domains = example.com
 #
 # ...end Mailbox setup
 
