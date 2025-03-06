@@ -14,7 +14,7 @@ RUN apt install -y supervisor
 
 # Install mailbox server dependencies
 RUN apt update
-RUN apt install -y sqlite3 postfix dovecot-core dovecot-imapd dovecot-pop3d
+RUN apt install -y sqlite3 postfix dovecot-core dovecot-imapd dovecot-pop3d dovecot-lmtpd
 
 # Create virtual mailbox vmail user and group
 RUN groupadd -g 5000 vmail
@@ -76,7 +76,7 @@ COPY src/dovecot/passwd /etc/dovecot/
 
 
 # Only for documentation: should expose ports (SMTP, IMAP)
-EXPOSE 25 587 143
+EXPOSE 25 587 143 2525
 
 ## Start services Command: uses supervisor as main process to start others
 CMD ["/usr/bin/supervisord", "-c", "/etc/supervisor/supervisord.conf"]

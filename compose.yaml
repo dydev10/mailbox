@@ -8,6 +8,7 @@ services:
       - "25:25"
       - "143:143"
       - "587:587"
+      - "2525:2525"
     #restart: always
     volumes:
       - /etc/letsencrypt/live:/etc/letsencrypt/live:ro
