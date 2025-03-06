@@ -1,9 +1,6 @@
 FROM ubuntu:24.04
 
 
-
-
-
 # Install supervisor to manage logs and services
 RUN apt update
 RUN apt install -y supervisor
@@ -22,9 +19,10 @@ RUN useradd \
   vmail
 ## ownership for mounted vmail dir will granted in entrypoint script for persistent storage
 
-
-# Copy usefull scripts
+## Copy usefull scripts
+# to list active ports
 COPY procnet ./
+##
 
 ## supervisor setup
 # Create log directory
@@ -39,41 +37,22 @@ RUN mkdir -p /etc/postfix/private
 RUN mkdir -p /etc/dovecot/private
 RUN chgrp postfix /etc/postfix/private
 RUN chgrp dovecot /etc/dovecot/private
+##
 
+## DB setup, will be used later
 # Copy the schema.sql script into the container
 COPY src/sqlite/schema.sql /tmp/schema.sql
 # Initialize the SQLite database
 RUN sqlite3 -init /tmp/schema.sql /etc/postfix/private/mail.sqlite ".exit"
 # HardLink to postfix db file for dovecot
 RUN ln -vi /etc/postfix/private/mail.sqlite /etc/dovecot/private/mail.sqlite
-
 # Clean up the SQL script
 RUN rm /tmp/schema.sql
-
+##
 
 # Copy postfix config files
 COPY src/postfix/. /etc/postfix/
 COPY src/dovecot/. /etc/dovecot/
-
-## hash files from .domains.env
-# hash postfix vmail_ssl.map text config
-COPY .domains.env/vmail_ssl.map /etc/postfix/vmail_ssl.map
-#RUN postmap /etc/postfix/vmail_ssl.map
-RUN postmap -F hash:/etc/postfix/vmail_ssl.map
-RUN rm /etc/postfix/vmail_ssl.map
-# hash vmaps text
-COPY .domains.env/vmaps /etc/postfix/vmaps
-RUN postmap /etc/postfix/vmaps
-RUN rm /etc/postfix/vmaps
-# hash postfix sasl_passwd text
-COPY .domains.env/sasl_passwd /etc/postfix/sasl_passwd
-RUN postmap /etc/postfix/sasl_passwd
-RUN rm /etc/postfix/sasl_passwd
-##
-
-# copy dovecot passwd text
-COPY .domains.env/passwd /etc/dovecot/passwd
-##
 
 
 # Only for documentation: should expose ports (SMTP, IMAP, Relay)

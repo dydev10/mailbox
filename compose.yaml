@@ -18,4 +18,5 @@ services:
       - /etc/letsencrypt/live:/etc/letsencrypt/live:ro
       - /etc/letsencrypt/archive:/etc/letsencrypt/archive:ro
       - /home/vmail:/home/vmail
+      - ./.domains.env:/.domains.env
 
