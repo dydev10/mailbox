@@ -62,7 +62,8 @@ COPY src/dovecot/. /etc/dovecot/
 ## hash files from .env
 # hash postfix vmail_ssl.map text config
 COPY .env/vmail_ssl.map /etc/postfix/vmail_ssl.map
-RUN postmap /etc/postfix/vmail_ssl.map
+#RUN postmap /etc/postfix/vmail_ssl.map
+RUN postmap -F hash:/etc/postfix/vmail_ssl.map
 RUN rm /etc/postfix/vmail_ssl.map
 # hash vmaps text
 COPY .env/vmaps /etc/postfix/vmaps
