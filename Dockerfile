@@ -1,11 +1,7 @@
 FROM ubuntu:24.04
 
-# Set hostname
-RUN echo "gcp.dydev.art" > /etc/hostname
 
-## install r syslog
-#RUN apt update
-#RUN apt install -y rsyslog
+
 
 
 # Install supervisor to manage logs and services
@@ -59,28 +55,28 @@ RUN rm /tmp/schema.sql
 COPY src/postfix/. /etc/postfix/
 COPY src/dovecot/. /etc/dovecot/
 
-## hash files from .env
+## hash files from .domains.env
 # hash postfix vmail_ssl.map text config
-COPY .env/vmail_ssl.map /etc/postfix/vmail_ssl.map
+COPY .domains.env/vmail_ssl.map /etc/postfix/vmail_ssl.map
 #RUN postmap /etc/postfix/vmail_ssl.map
 RUN postmap -F hash:/etc/postfix/vmail_ssl.map
 RUN rm /etc/postfix/vmail_ssl.map
 # hash vmaps text
-COPY .env/vmaps /etc/postfix/vmaps
+COPY .domains.env/vmaps /etc/postfix/vmaps
 RUN postmap /etc/postfix/vmaps
 RUN rm /etc/postfix/vmaps
 # hash postfix sasl_passwd text
-COPY .env/sasl_passwd /etc/postfix/sasl_passwd
+COPY .domains.env/sasl_passwd /etc/postfix/sasl_passwd
 RUN postmap /etc/postfix/sasl_passwd
 RUN rm /etc/postfix/sasl_passwd
 ##
 
 # copy dovecot passwd text
-COPY .env/passwd /etc/dovecot/passwd
+COPY .domains.env/passwd /etc/dovecot/passwd
 ##
 
 
-# Only for documentation: should expose ports (SMTP, IMAP)
+# Only for documentation: should expose ports (SMTP, IMAP, Relay)
 EXPOSE 25 587 143 2525
 
 
@@ -92,14 +88,7 @@ RUN chmod +x /entrypoint.sh
 ENTRYPOINT ["/entrypoint.sh"]
 ##
 
-### Start services Command: uses supervisor as main process to start others
-#CMD ["/usr/bin/supervisord", "-c", "/etc/supervisor/supervisord.conf"]
-###
 
-## Test test test
-#USER ubuntu
-#WORKDIR /home/ubuntu
-#COPY --chown=ubuntu hello.txt ./
-#RUN echo "$(whoami)" >> hello.txt
-#RUN echo "$(hostname)" >> hello.txt
+##
+## END Dockerfile
 
