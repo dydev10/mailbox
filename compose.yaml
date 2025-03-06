@@ -2,7 +2,7 @@ services:
   mailbox:
     image: dydev20/mailbox:latest
     build: .
-    command: tail -f /dev/null  # Keeps the container alive
+    #command: tail -f /dev/null  # Keeps the container alive
     #command: service postfix start ; service dovecot start ; tail -f /dev/null    # Keeps the container alive
     ports:
       - "25:25"

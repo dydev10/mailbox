@@ -7,6 +7,11 @@ RUN echo "gcp.dydev.art" > /etc/hostname
 #RUN apt update
 #RUN apt install -y rsyslog
 
+
+# Install supervisor to manage logs and services
+RUN apt update
+RUN apt install -y supervisor
+
 # Install mailbox server dependencies
 RUN apt update
 RUN apt install -y sqlite3 postfix dovecot-core dovecot-imapd dovecot-pop3d
@@ -24,6 +29,14 @@ RUN useradd \
 # Copy usefull scripts
 COPY procnet ./
 
+## supervisor setup
+# Create log directory
+RUN mkdir -p /var/log/supervisor
+# Copy Supervisor config
+COPY src/supervisord.conf /etc/supervisor/supervisord.conf
+##
+
+## postfix dovecot setup
 # Create private folders with postfix and dovecot access groups
 RUN mkdir -p /etc/postfix/private
 RUN mkdir -p /etc/dovecot/private
@@ -61,8 +74,12 @@ RUN rm /etc/postfix/sasl_passwd
 COPY src/dovecot/passwd /etc/dovecot/
 ##
 
-## Start services Command
-#CMD service postfix start ; service dovecot start
+
+# Only for documentation: should expose ports (SMTP, IMAP)
+EXPOSE 25 587 143
+
+## Start services Command: uses supervisor as main process to start others
+CMD ["/usr/bin/supervisord", "-c", "/etc/supervisor/supervisord.conf"]
 ##
 
 ## Test test test
