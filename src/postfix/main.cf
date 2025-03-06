@@ -47,7 +47,7 @@ smtp_tls_note_starttls_offer = yes
 # Core Mail Server
 #
 # Domain setup
-myhostname = gcp.dydev.art
+myhostname = mail.example.com
 alias_maps = hash:/etc/aliases
 alias_database = hash:/etc/aliases
 #myorigin = /etc/mailname

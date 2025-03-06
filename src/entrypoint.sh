@@ -20,6 +20,10 @@ rm /etc/postfix/sasl_passwd
 cp .domains.env/passwd /etc/dovecot/passwd
 ##
 
+## Update hostname in postfix conf
+postconf -e "myhostname=$(hostname)"
+##
+
 # Change ownership of vmail
 chown -R vmail:vmail /home/vmail
 
