@@ -1,3 +1,0 @@
-# Add more domain in new line with format: domain key  cert
-gcp.dydev.art /etc/letsencrypt/live/gcp.dydev.art/privkey.pem /etc/letsencrypt/live/gcp.dydev.art/fullchain.pem
-

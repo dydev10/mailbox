@@ -24,6 +24,7 @@ RUN useradd \
   -g 5000 \
   -s /bin/bash \
   vmail
+## ownership for mounted vmail dir will granted in entrypoint script for persistent storage
 
 
 # Copy usefull scripts
@@ -58,29 +59,41 @@ RUN rm /tmp/schema.sql
 COPY src/postfix/. /etc/postfix/
 COPY src/dovecot/. /etc/dovecot/
 
-## hash files
+## hash files from .env
 # hash postfix vmail_ssl.map text config
+COPY .env/vmail_ssl.map /etc/postfix/vmail_ssl.map
 RUN postmap /etc/postfix/vmail_ssl.map
 RUN rm /etc/postfix/vmail_ssl.map
 # hash vmaps text
+COPY .env/vmaps /etc/postfix/vmaps
 RUN postmap /etc/postfix/vmaps
 RUN rm /etc/postfix/vmaps
 # hash postfix sasl_passwd text
+COPY .env/sasl_passwd /etc/postfix/sasl_passwd
 RUN postmap /etc/postfix/sasl_passwd
 RUN rm /etc/postfix/sasl_passwd
 ##
 
 # copy dovecot passwd text
-COPY src/dovecot/passwd /etc/dovecot/
+COPY .env/passwd /etc/dovecot/passwd
 ##
 
 
 # Only for documentation: should expose ports (SMTP, IMAP)
 EXPOSE 25 587 143 2525
 
-## Start services Command: uses supervisor as main process to start others
-CMD ["/usr/bin/supervisord", "-c", "/etc/supervisor/supervisord.conf"]
+
 ##
+#Copy entrypoint script
+COPY src/entrypoint.sh /entrypoint.sh
+RUN chmod +x /entrypoint.sh
+# Start container with this entrypoint to set permission on mounted volumes and start supervisor
+ENTRYPOINT ["/entrypoint.sh"]
+##
+
+### Start services Command: uses supervisor as main process to start others
+#CMD ["/usr/bin/supervisord", "-c", "/etc/supervisor/supervisord.conf"]
+###
 
 ## Test test test
 #USER ubuntu
