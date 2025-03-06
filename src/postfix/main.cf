@@ -64,6 +64,9 @@ inet_protocols = all
 #
 # ...end Server Setup
 
+## setup logs output to stdout so that its easier to read logs in container without syslog
+maillog_file = /dev/stdout
+##
 
 # Mailbox setup
 #
