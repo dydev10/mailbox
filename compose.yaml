@@ -6,7 +6,7 @@ services:
       context: .
     
     # User config
-    image: dydev20/mailbox:0.1
+    image: dydev420/mailbox:0.1
     hostname: mail.example.com
     ports:
       - "25:25"
