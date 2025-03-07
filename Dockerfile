@@ -1,13 +1,17 @@
 FROM ubuntu:24.04
 
 
-# Install supervisor to manage logs and services
-RUN apt update
-RUN apt install -y supervisor
+# Install supervisor and all mailbox dependencies
+RUN apt update && \
+  apt install -y \
+  supervisor \
+  sqlite3 \
+  postfix \
+  dovecot-core \
+  dovecot-imapd \
+  dovecot-pop3d \
+  dovecot-lmtpd
 
-# Install mailbox server dependencies
-RUN apt update
-RUN apt install -y sqlite3 postfix dovecot-core dovecot-imapd dovecot-pop3d dovecot-lmtpd
 
 # Create virtual mailbox vmail user and group
 RUN groupadd -g 5000 vmail
