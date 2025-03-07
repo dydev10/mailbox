@@ -84,7 +84,7 @@ ADDITIONAL_HOSTS=$(echo "$OTHER_HOSTS")
 # add localname config for mailbox domain first
 append_dovecot_localname "$mailhost" "mailbox"
 # Loop through the comma-separated domains
-virtualdomains = ""
+virtualdomains=""
 virtualdomains+="${maildomain}"
 IFS=, read -ra ADDITIONAL_HOST_LIST <<< "$ADDITIONAL_HOSTS"
 for ADD_HOST in "${ADDITIONAL_HOST_LIST[@]}"
