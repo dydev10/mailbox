@@ -12,7 +12,7 @@ append_dovecot_localname() {
     cat <<EOF >> "$DOVECOT_SSL_CONF"
 
 # Added by docker entrypoint
-localname $DOMAIN {
+local_name $DOMAIN {
     ssl_cert = </etc/letsencrypt/live/$PATH_NAME/fullchain.pem
     ssl_key = </etc/letsencrypt/live/$PATH_NAME/privkey.pem
 }
