@@ -3,7 +3,7 @@
 A lightweight email server with SMTP replay and IMAP inbox service. Uses `postfix` for SMTP server, `dovecot` for IMAP server and `sqlite3` as database engine.
 
 ## Setup
-Create a dirctory `mailbox` in your host machine. You will need to configure your own domain and users using by creating the following files inside `mailbox` directory:
+Create a directory `mailbox` in your host machine. You will need to configure your own domain and users using by creating the following files inside `mailbox` directory:
 
 ```
 mailbox
