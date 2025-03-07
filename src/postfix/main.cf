@@ -51,7 +51,7 @@ myhostname = mail.example.com
 alias_maps = hash:/etc/aliases
 alias_database = hash:/etc/aliases
 #myorigin = /etc/mailname
-#mydestination = $myhostname, $myorigin, localhost.dydev.art, localhost
+#mydestination = $myhostname, $myorigin, localhost.example.com, localhost
 myorigin = localhost
 mydestination = localhost
 # Network and Relay config

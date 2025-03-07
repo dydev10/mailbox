@@ -1,9 +1,10 @@
 #!/bin/bash
 #
 DOVECOT_SSL_CONF="/etc/dovecot/conf.d/10-ssl.conf"
+DOVECOT_LMTP_CONF="/etc/dovecot/conf.d/20-lmtp.conf"
 POSTFIX_CONF="/etc/postfix/main.cf"
 
-# Function to append domain configuration with optional custom path
+# append local_name domain cert configuration in dovecot
 #
 append_dovecot_localname() {
     local DOMAIN=$1
@@ -14,6 +15,23 @@ append_dovecot_localname() {
 local_name $DOMAIN {
     ssl_cert = </etc/letsencrypt/live/$PATH_NAME/fullchain.pem
     ssl_key = </etc/letsencrypt/live/$PATH_NAME/privkey.pem
+}
+
+EOF
+}
+#
+##
+
+
+# append required postmaster address for LMTP in dovecot
+#
+append_dovecot_lmtp_postmaster() {
+    local LMTP_DOMAIN=$1
+    cat <<EOF >> "$DOVECOT_LMTP_CONF"
+
+# Added by docker entrypoint
+protocol lmtp {
+  postmaster_address = postmaster@$LMTP_DOMAIN   # required
 }
 
 EOF
@@ -50,6 +68,9 @@ cp .domains.env/passwd /etc/dovecot/passwd
 mailhost=$(hostname -f)
 # Strip subdomain from hostname to use as main mail domain
 maildomain=$(echo "$mailhost" | awk -F'.' '{ print $(NF-1)"."$NF }')
+
+# set postmaster address using maildomain in dovecot lmtp conf
+append_dovecot_lmtp_postmaster "$maildomain"
 
 # set new postconf myhostname value
 postconf -e "myhostname=$mailhost"
