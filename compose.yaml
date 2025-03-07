@@ -20,4 +20,7 @@ services:
       #- /etc/letsencrypt/live:/etc/letsencrypt/live:ro
       - /home/vmail:/home/vmail
       - ./.domains.env:/.domains.env
+    env_file:
+      - path: ./.env
+        required: true
 

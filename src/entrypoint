@@ -8,7 +8,6 @@ POSTFIX_CONF="/etc/postfix/main.cf"
 append_dovecot_localname() {
     local DOMAIN=$1
     local PATH_NAME=${2:-$DOMAIN}  # Use second argument if provided, otherwise use DOMAIN
-
     cat <<EOF >> "$DOVECOT_SSL_CONF"
 
 # Added by docker entrypoint
@@ -55,12 +54,12 @@ maildomain=$(echo "$mailhost" | awk -F'.' '{ print $(NF-1)"."$NF }')
 # set new postconf myhostname value
 postconf -e "myhostname=$mailhost"
 # Set relay host from passed env file
-relayhost=$(echo "[smtp.mailgun.org]:2525")
+relayhost=$(echo "$RELAY_HOST")
 postconf -e "relayhost=$relayhost"
 
 ## Setup SSL config in postfix and dovecot for all domains
 # Use env files to get additional domains
-ADDITIONAL_HOSTS=""
+ADDITIONAL_HOSTS=$(echo "$OTHER_HOSTS")
 # add localname config for mailbox domain first
 append_dovecot_localname "$mailhost" "mailbox"
 # Loop through the comma-separated domains
