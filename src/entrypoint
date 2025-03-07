@@ -99,6 +99,12 @@ postconf -e "virtual_mailbox_domains=$virtualdomains"
 ##
 
 
+## Copy resolve.conf from system to postfix spool
+# is needed because it doesnt happen autmatically after booting image
+# See: https://superuser.com/a/975348
+cp /etc/resolv.conf /var/spool/postfix/etc/resolv.conf
+##
+
 ### Final starup
 #
 # Finally run starup commands to launch supervisor
