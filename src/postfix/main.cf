@@ -99,10 +99,10 @@ smtpd_sasl_auth_enable = yes
 smtpd_recipient_restrictions = permit_sasl_authenticated,permit_mynetworks,reject_unauth_destination
 #smtpd_relay_restrictions = permit_mynetworks,permit_sasl_authenticated,defer_unauth_destination
 # Configure TLS
-#smtpd_tls_CAfile = /etc/letsencrypt/live/gcp.dydev.art/chain.pem
-#smtpd_tls_key_file = /etc/letsencrypt/live/gcp.dydev.art/privkey.pem
-#smtpd_tls_cert_file = /etc/letsencrypt/live/gcp.dydev.art/fullchain.pem
-smtpd_tls_chain_files = /etc/letsencrypt/live/gcp.dydev.art/privkey.pem, /etc/letsencrypt/live/gcp.dydev.art/fullchain.pem
+#smtpd_tls_CAfile = /etc/letsencrypt/live/mailbox/chain.pem
+#smtpd_tls_key_file = /etc/letsencrypt/live/mailbox/privkey.pem
+#smtpd_tls_cert_file = /etc/letsencrypt/live/mailbox/fullchain.pem
+smtpd_tls_chain_files = /etc/letsencrypt/live/mailbox/privkey.pem, /etc/letsencrypt/live/mailbox/fullchain.pem
 smtpd_tls_security_level = may
 smtpd_tls_loglevel = 1
 smtpd_tls_received_header = yes

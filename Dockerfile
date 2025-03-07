@@ -61,10 +61,10 @@ EXPOSE 25 587 143 2525
 
 ##
 #Copy entrypoint script
-COPY src/entrypoint.sh /entrypoint.sh
-RUN chmod +x /entrypoint.sh
+COPY src/entrypoint /entrypoint
+RUN chmod +x /entrypoint
 # Start container with this entrypoint to set permission on mounted volumes and start supervisor
-ENTRYPOINT ["/entrypoint.sh"]
+ENTRYPOINT ["/entrypoint"]
 ##
 
 

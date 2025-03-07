@@ -15,8 +15,9 @@ services:
       - "2525:2525"
     restart: on-failure
     volumes:
-      - /etc/letsencrypt/live:/etc/letsencrypt/live:ro
+      - /etc/letsencrypt/live/mail.example.com:/etc/letsencrypt/live/mailbox:ro
       - /etc/letsencrypt/archive:/etc/letsencrypt/archive:ro
+      #- /etc/letsencrypt/live:/etc/letsencrypt/live:ro
       - /home/vmail:/home/vmail
       - ./.domains.env:/.domains.env
 
