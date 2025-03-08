@@ -15,7 +15,45 @@ mailbox
 ├── .env
 └── compose.yaml
 ```
+- **.domains.env**: Contains lookup table files used by postfix and dovecot for users and virtual domains.
+  Virtual domains are additional domains that will supported by this email services. Requires their own ssl certificates and configurations.
 
+  `mail.example.com` in the following examples is used as hostname of the mail service. Should be same as the hostname given in docker compose file.
+  All configurations related to hostname are required for mailbox to work. `mail.exmaple.com` will use `@example.com` as email domain.
+  
+  `mail.vdomain.com` can is used as exmaple for one of the virtual domains host that can be assigned to this server to handle mails from these domain.
+  Virtual domain configurations are optional. They can have none or mutliple entries. An entry for `mail.vdomain.com` will use `@vdomain.com` as email domain.
+
+  - **passwd**: users allowed to use the email service for sending emails and log in to imap service.
+    Generate a new password by running this command inside the container machine: `doveadm pw`.
+    The format for the entries in this file is:
+    ```plaintext
+    user@example.com:{CRYPT}cryptPass::::::
+    user1@vdomain.com:{CRYPT}cryptPass::::::
+    ```
+    
+  - **sasl_passwd**: credentials for ralay smtp services used as relayhost
+    The format for the entries in this file is:
+    ```plaintext
+    [smtp.relayexample.com]:2525 postmaster@example.com:relayPass
+    ```  
+
+  - **vmail_ssl.map**: Directory for ssl certificates to be used by postfix and dovecot for all TLS connections.
+    These are the path inside the conainer where the certificate directories are mounted as volume in docker compose file.
+    Configuration for hostname uses `mailbox` as the diretory. The virtual domain use their own host as directory. 
+    The format for the entries in this file is:
+    ```plaintext
+    mail.example.art /etc/letsencrypt/live/mailbox/privkey.pem /etc/letsencrypt/live/mailbox/fullchain.pem
+    mail.vdomain.com /etc/letsencrypt/live/mail.vdomain.com/privkey.pem /etc/letsencrypt/live/mail.vdomain.com/fullchain.pem
+    ```  
+
+  - **vmaps**: mapping for users and their mail storage path in the system mail directory.
+    The format for the entries in this file is:
+    ```plaintext
+    user@example.com example.com/user/
+    user1@vdomain.com vdomain.com/user1/
+    ```  
+  
 ## Using docker compose to run image
 
 ```yaml
