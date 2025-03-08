@@ -77,7 +77,7 @@ mailbox
 Remove the Build config part of the sample `compose.yaml` to pull the latest image from dockerhub instead of building it locally.
 
 #### Compose file
-The sample compose file sontains some required and some optional parameters needed to run mailbox docker image.
+The sample compose file contains some required and some optional parameters needed to run mailbox docker image.
 
 Following params are **required**:
   - `hostname`: hostname of the container machine. This will used as the hostname by postfix and dovecot configurations
