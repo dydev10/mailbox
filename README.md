@@ -85,9 +85,9 @@ Following params are **required**:
   - `ports`: All the ports listed are required, except 2525. Port 2525 is used for relayhost in this example.
  
   - `volumes`: There are three types of volume mounted:
-    1. **Certificates**: Can be multiple. These directories contain ssl certificates on host machine. See `./.domain.evn/vmail_ssl.map` docs for more details about restrictions and format for path on container machine.
+    1. **Certificates**: Can be multiple. These directories contain ssl certificates on host machine. See `./.domain.env/vmail_ssl.map` docs for more details about restrictions and format for path on container machine.
     2. **Mail storage**: Virtual mailbox directory. This is the directory on host machine used as persitent storage for all the mails.
-    2. **Configurations**: Lookup table configurations defined in `./.domain.evn/`. See more details there.
+    2. **Configurations**: Lookup table configurations defined in `./.domain.env/`. See more details there.
 
   - `env_file`: Runtime environment configuration defined in `./.env`. See more details there.
 
