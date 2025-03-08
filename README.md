@@ -24,17 +24,21 @@ mailbox
   `mail.vdomain.com` can is used as exmaple for one of the virtual domains host that can be assigned to this server to handle mails from these domain.
   Virtual domain configurations are optional. They can have none or mutliple entries. An entry for `mail.vdomain.com` will use `@vdomain.com` as email domain.
 
-  - **passwd**: users allowed to use the email service for sending emails and log in to imap service.
+  - **passwd**: email addresses allowed to use the email service for sending emails and log in to imap service.
     Generate a new password by running this command inside the container machine: `doveadm pw`.
     The format for the entries in this file is:
     ```plaintext
+    # email:{schema}passwordHash::::::
+    
     user@example.com:{CRYPT}cryptPass::::::
-    user1@vdomain.com:{CRYPT}cryptPass::::::
+    user@vdomain.com:{CRYPT}cryptPass::::::
     ```
     
   - **sasl_passwd**: credentials for ralay smtp services used as relayhost
     The format for the entries in this file is:
     ```plaintext
+    # [host]:port emaail:password
+    
     [smtp.relayexample.com]:2525 postmaster@example.com:relayPass
     ```  
 
@@ -43,15 +47,19 @@ mailbox
     Configuration for hostname uses `mailbox` as the diretory. The virtual domain use their own host as directory. 
     The format for the entries in this file is:
     ```plaintext
-    mail.example.art /etc/letsencrypt/live/mailbox/privkey.pem /etc/letsencrypt/live/mailbox/fullchain.pem
+    # host /path/to/key.file /path/to/cert.file
+    
+    mail.example.com /etc/letsencrypt/live/mailbox/privkey.pem /etc/letsencrypt/live/mailbox/fullchain.pem
     mail.vdomain.com /etc/letsencrypt/live/mail.vdomain.com/privkey.pem /etc/letsencrypt/live/mail.vdomain.com/fullchain.pem
     ```  
 
-  - **vmaps**: mapping for users and their mail storage path in the system mail directory.
+  - **vmaps**: mapping for email addresses and their mail storage path in the system mail directory.
     The format for the entries in this file is:
     ```plaintext
+    # email domain/username/
+    
     user@example.com example.com/user/
-    user1@vdomain.com vdomain.com/user1/
+    user@vdomain.com vdomain.com/user/
     ```  
   
 ## Using docker compose to run image
