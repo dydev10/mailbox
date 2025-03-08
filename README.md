@@ -34,7 +34,7 @@ mailbox
     user@vdomain.com:{CRYPT}cryptPass::::::
     ```
     
-  - **sasl_passwd**: credentials for relay smtp services used as relayhost
+  - **sasl_passwd**: credentials for relay smtp services used as relayhost.
     The format for the entries in this file is:
     ```plaintext
     # [host]:port emaail:password
