@@ -1,5 +1,8 @@
 # env files
 .env
 *.env
+secrets/
+data/
+*.zip
 
 
