@@ -1,121 +1,79 @@
-# See /usr/share/postfix/main.cf.dist for a commented, more complete version
-
-
-# Debian specific:  Specifying a file name will cause the first
-# line of that file to be used as the name.  The Debian default
-# is /etc/mailname.
-#myorigin = /etc/mailname
-
-smtpd_banner = $myhostname ESMTP $mail_name (Ubuntu)
-biff = no
-
-# appending .domain is the MUA's job.
-append_dot_mydomain = no
-
-# Uncomment the next line to generate "delayed mail" warnings
-#delay_warning_time = 4h
-
-readme_directory = no
-
-# See http://www.postfix.org/COMPATIBILITY_README.html -- default to 3.6 on
-# fresh installs.
+# Postfix 3.8 (Ubuntu 24.04) for dydev10/mailbox.
+# myhostname and mydomain default from the compose "hostname"; relayhost
+# and smtpd_tls_chain_files are set by /entrypoint on every start.
 compatibility_level = 3.6
+smtpd_banner = $myhostname ESMTP
+biff = no
+append_dot_mydomain = no
+readme_directory = no
+maillog_file = /dev/stdout
 
-#
-# ---START config
-#
-smtp_tls_session_cache_database = btree:${data_directory}/smtp_scache
-smtpd_tls_session_cache_database = btree:${data_directory}/smtpd_scache
-
-# (Sender)
-#
-# TLS certs
-#smtp_tls_CApath=/etc/ssl/certs
-#smtp_tls_security_level=may
-# SMTP auth parameters
-smtp_tls_security_level = may
-smtp_sasl_auth_enable = yes
-smtp_sasl_password_maps = hash:/etc/postfix/sasl_passwd
-smtp_sasl_security_options = noanonymous
-smtp_tls_note_starttls_offer = yes
-# params for sender
-#maximal_queue_lifetime = 0
-#
-# ...end (Sender) Setup
-
-
-# Core Mail Server
-#
-# Domain setup
-myhostname = mail.example.com
+# --- identity and local delivery (only localhost is local; users are virtual)
+myorigin = $mydomain
+mydestination = localhost
+mynetworks = 127.0.0.0/8 [::1]/128
+inet_interfaces = all
+inet_protocols = ipv4
+recipient_delimiter = +
+mailbox_size_limit = 0
 alias_maps = hash:/etc/aliases
 alias_database = hash:/etc/aliases
-#myorigin = /etc/mailname
-#mydestination = $myhostname, $myorigin, localhost.example.com, localhost
-myorigin = localhost
-mydestination = localhost
-# Network and Relay config
-relayhost = 
-mynetworks = 127.0.0.0/8 [::ffff:127.0.0.0]/104 [::1]/128
-mailbox_size_limit = 0
-recipient_delimiter = +
-inet_interfaces = all
-inet_protocols = all
-#
-# ...end Server Setup
 
-## setup logs output to stdout so that its easier to read logs in container without syslog
-maillog_file = /dev/stdout
-##
+# --- virtual mailboxes and aliases in SQLite, delivered by Dovecot LMTP.
+# smtpd is chrooted, so lookups go through proxymap (proxy:).
+virtual_mailbox_domains = proxy:sqlite:/etc/postfix/sqlite/dom-vmbox.cf
+virtual_mailbox_maps    = proxy:sqlite:/etc/postfix/sqlite/maps-vmbox.cf
+virtual_alias_maps      = proxy:sqlite:/etc/postfix/sqlite/maps-valias.cf
+virtual_transport       = lmtp:unix:private/dovecot-lmtp
+smtpd_sender_login_maps = proxy:sqlite:/etc/postfix/sqlite/maps-sender-login.cf
+# proxymap opens only the tables named here, so a chrooted daemon cannot make
+# it read anything else. This list is narrower than Postfix's built-in
+# default: if you later add another proxy: map (transport_maps, for example),
+# add its parameter here too, or Postfix logs "table not approved for proxy
+# read access" and the lookup fails.
+proxy_read_maps = $local_recipient_maps $mydestination $mynetworks
+    $virtual_alias_maps $virtual_mailbox_domains $virtual_mailbox_maps
+    $smtpd_sender_login_maps
 
-# Mailbox setup
-#
-# MailDir format
-home_mailbox = Maildir/
-mailbox_transport = lmtp:unix:private/dovecot-lmtp
-# Virtual mails
-virtual_mailbox_base = /home/vmail
-virtual_mailbox_maps = hash:/etc/postfix/vmaps
-virtual_transport = lmtp:unix:private/dovecot-lmtp
-virtual_minimum_uid = 100
-virtual_uid_maps = static:5000
-virtual_gid_maps = static:5000
-# comma seperated domains
-virtual_mailbox_domains = example.com
-#
-# ...end Mailbox setup
+# --- outbound: everything goes through the relay, over TLS, with SASL
+smtp_sasl_auth_enable = yes
+# One line, "[relay]:port user:password", from the compose secret. texthash:
+# needs no postmap; Postfix opens it as root before entering the chroot.
+# After changing the secret: postfix reload.
+smtp_sasl_password_maps = texthash:/run/secrets/relay_sasl
+smtp_sasl_security_options = noanonymous
+smtp_tls_security_level = encrypt
+smtp_tls_session_cache_database = btree:${data_directory}/smtp_scache
 
-
-# (Receiver)
-#
-# SMTPD Auth
-smtpd_sasl_type = dovecot
-smtpd_sasl_path = private/auth
-smtpd_sasl_local_domain = 
-smtpd_sasl_security_options = noanonymous
-#smtpd_sasl_tls_security_options = noanonymous
-broken_sasl_auth_clients = yes
-smtpd_sasl_auth_enable = yes
-smtpd_recipient_restrictions = permit_sasl_authenticated,permit_mynetworks,reject_unauth_destination
-#smtpd_relay_restrictions = permit_mynetworks,permit_sasl_authenticated,defer_unauth_destination
-# Configure TLS
-#smtpd_tls_CAfile = /etc/letsencrypt/live/mailbox/chain.pem
-#smtpd_tls_key_file = /etc/letsencrypt/live/mailbox/privkey.pem
-#smtpd_tls_cert_file = /etc/letsencrypt/live/mailbox/fullchain.pem
-smtpd_tls_chain_files = /etc/letsencrypt/live/mailbox/privkey.pem, /etc/letsencrypt/live/mailbox/fullchain.pem
+# --- inbound TLS; one certificate per hostname via SNI
 smtpd_tls_security_level = may
+smtpd_tls_auth_only = yes
 smtpd_tls_loglevel = 1
 smtpd_tls_received_header = yes
-#
-# ...end SMTPD Setup
-
-#
-# SNI setup
-#
+smtpd_tls_session_cache_database = btree:${data_directory}/smtpd_scache
 tls_server_sni_maps = hash:/etc/postfix/vmail_ssl.map
-#
-# ..end SNI setup
 
-#
-# ---END config
-#
+# --- SASL via Dovecot; enabled only on 587/465 in master.cf
+smtpd_sasl_type = dovecot
+smtpd_sasl_path = private/auth
+smtpd_sasl_auth_enable = no
+smtpd_sasl_security_options = noanonymous
+
+# --- port 25 restrictions
+smtpd_helo_required = yes
+smtpd_sender_restrictions = reject_non_fqdn_sender, reject_unknown_sender_domain
+smtpd_relay_restrictions = permit_mynetworks, permit_sasl_authenticated, reject_unauth_destination
+smtpd_recipient_restrictions = permit_mynetworks, permit_sasl_authenticated, reject_unauth_destination
+
+# --- postscreen: drop bots before smtpd. Listing codes are filtered so
+# a resolver error reply is not counted as a hit.
+postscreen_access_list = permit_mynetworks
+postscreen_dnsbl_sites =
+    zen.spamhaus.org=127.0.0.[2..11]*3
+    bl.spamcop.net=127.0.0.2*2
+    psbl.surriel.com=127.0.0.2*2
+    bl.mailspike.net=127.0.0.2*2
+    list.dnswl.org=127.0.[0..255].[0..3]*-3
+postscreen_dnsbl_threshold = 3
+postscreen_dnsbl_action = enforce
+postscreen_greet_action = enforce
