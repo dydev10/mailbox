@@ -1,0 +1,9 @@
+# smtpd_sender_login_maps: logins allowed to use this MAIL FROM address:
+# the mailbox itself, plus every mailbox an alias points to.
+dbpath = /etc/mailsql/mail.sqlite
+query = SELECT email FROM Mailbox
+	WHERE localpart = '%u' AND domain = '%d' AND receive = 1
+	UNION
+	SELECT M.email FROM AliasTarget T JOIN Mailbox M ON M.id = T.target_id
+	WHERE T.localpart = '%u' AND T.domain = '%d' AND T.active = 1
+	  AND M.receive = 1

@@ -1,0 +1,5 @@
+# virtual_mailbox_maps: does this mailbox exist and take mail? (LMTP only
+# needs "yes"; Dovecot's userdb decides where the mail is stored)
+dbpath = /etc/mailsql/mail.sqlite
+query = SELECT 'OK' FROM Mailbox
+  WHERE localpart = '%u' AND domain = '%d' AND receive = 1

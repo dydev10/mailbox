@@ -1,0 +1,4 @@
+# virtual_mailbox_domains: active domains of class 'mailbox'
+dbpath = /etc/mailsql/mail.sqlite
+query = SELECT name FROM Domain
+  WHERE name = '%s' AND class = 'mailbox' AND active = 1

@@ -1,0 +1,6 @@
+# virtual_alias_maps: one result row per alias target, "user[+ext]@domain".
+# Targets outside your domains need an Address row in a 'nexthop' Domain.
+dbpath = /etc/mailsql/mail.sqlite
+query = SELECT target FROM AliasTarget
+  WHERE localpart = '%u' AND domain = '%d' AND active = 1
+    AND target IS NOT NULL
