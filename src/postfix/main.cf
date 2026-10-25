@@ -42,7 +42,13 @@ smtp_sasl_auth_enable = yes
 # After changing the secret: postfix reload.
 smtp_sasl_password_maps = texthash:/run/secrets/relay_sasl
 smtp_sasl_security_options = noanonymous
-smtp_tls_security_level = encrypt
+# secure: TLS is required AND the relay's certificate must match the host
+# name in RELAY_HOST and chain to a trusted CA, so nobody can pose as the
+# relay to collect the password. The CA bundle comes from ca-certificates;
+# Postfix reads it before entering the chroot.
+# If you ever deliver directly (no relayhost), change this back to may or dane.
+smtp_tls_security_level = secure
+smtp_tls_CAfile = /etc/ssl/certs/ca-certificates.crt
 smtp_tls_session_cache_database = btree:${data_directory}/smtp_scache
 
 # --- inbound TLS; one certificate per hostname via SNI
