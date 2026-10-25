@@ -1,26 +1,23 @@
 services:
   mailbox:
-    # Build config
+    build: .
+    image: dydev420/mailbox:0.2
     container_name: mailbox
-    build: 
-      context: .
-    
-    # User config
-    image: dydev420/mailbox:0.1
-    hostname: mail.example.com
+    hostname: mail.example.com          # public name of this server
+    restart: unless-stopped
     ports:
-      - "25:25"
-      - "143:143"
-      - "587:587"
-      - "2525:2525"
-    restart: on-failure
+      - "25:25"     # inbound mail (postscreen)
+      - "465:465"   # submission, implicit TLS
+      - "587:587"   # submission, STARTTLS
+      - "993:993"   # IMAP over TLS
+    env_file: .env
+    secrets:
+      - relay_sasl
     volumes:
-      - /etc/letsencrypt/live/mail.example.com:/etc/letsencrypt/live/mailbox:ro
-      - /etc/letsencrypt/archive:/etc/letsencrypt/archive:ro
-      #- /etc/letsencrypt/live:/etc/letsencrypt/live:ro
-      - /home/vmail:/home/vmail
-      - ./.domains.env:/.domains.env
-    env_file:
-      - path: ./.env
-        required: true
+      - /etc/letsencrypt:/etc/letsencrypt:ro   # live/ links into archive/
+      - /home/vmail:/home/vmail                # Maildirs, uid 5000
+      - ./data:/etc/mailsql                    # mail.sqlite
 
+secrets:
+  relay_sasl:
+    file: ./secrets/relay_sasl
