@@ -1,0 +1,23 @@
+# /etc/dovecot/dovecot-sql.conf.ext  (Dovecot 2.3)
+# All three queries read the Mailbox view (see schema.sql); it fills in
+# the home, uid, gid and quota defaults. NULL fields are ignored.
+driver = sqlite
+connect = /etc/mailsql/mail.sqlite
+default_pass_scheme = SHA512-CRYPT
+
+# Login: returns the userdb fields too, so the prefetch userdb needs no
+# second query.
+password_query = \
+  SELECT email AS user, password, home AS userdb_home, \
+    uid AS userdb_uid, gid AS userdb_gid, quota_rule AS userdb_quota_rule \
+  FROM Mailbox \
+  WHERE localpart = '%n' AND domain = '%d' AND login = 1 \
+    AND password IS NOT NULL
+
+# Delivery (LMTP) and doveadm: also finds mailboxes with login blocked.
+user_query = \
+  SELECT home, uid, gid, quota_rule \
+  FROM Mailbox \
+  WHERE localpart = '%n' AND domain = '%d' AND receive = 1
+
+iterate_query = SELECT email AS user FROM Mailbox WHERE receive = 1
