@@ -31,9 +31,6 @@ RUN groupadd -g 5000 vmail && \
     vmail
 ## ownership for mounted vmail dir will granted in entrypoint script for persistent storage
 
-# Build /etc/aliases.db for alias_maps = hash:/etc/aliases (local mail only).
-RUN newaliases
-
 # Turn on foreign keys in every interactive sqlite3 session as root.
 RUN echo 'PRAGMA foreign_keys = ON;' > /root/.sqliterc
 
