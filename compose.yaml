@@ -5,6 +5,12 @@ services:
     container_name: mailbox
     hostname: mail.example.com          # public name of this server
     restart: unless-stopped
+    logging:                            # docker logs: keep the newest ~50 MB
+      driver: json-file
+      options:
+        max-size: "10m"
+        max-file: "5"
+        compress: "true"
     ports:
       - "25:25"     # inbound mail (postscreen)
       - "465:465"   # submission, implicit TLS
