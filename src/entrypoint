@@ -1,112 +1,95 @@
 #!/bin/bash
-#
-DOVECOT_SSL_CONF="/etc/dovecot/conf.d/10-ssl.conf"
-DOVECOT_LMTP_CONF="/etc/dovecot/conf.d/20-lmtp.conf"
-POSTFIX_CONF="/etc/postfix/main.cf"
+# Prepares config from the environment, then starts supervisord.
+# Safe to run on every start: it overwrites what it generates, never appends.
+set -euo pipefail
 
-# append local_name domain cert configuration in dovecot
-#
-append_dovecot_localname() {
-    local DOMAIN=$1
-    local PATH_NAME=${2:-$DOMAIN}  # Use second argument if provided, otherwise use DOMAIN
-    cat <<EOF >> "$DOVECOT_SSL_CONF"
+# Required: stop with a message if missing
+: "${MAIL_DOMAIN:?set MAIL_DOMAIN in .env}"
+: "${RELAY_HOST:?set RELAY_HOST in .env (all outbound mail goes through a relay)}"
 
-# Added by docker entrypoint
-local_name $DOMAIN {
-    ssl_cert = </etc/letsencrypt/live/$PATH_NAME/fullchain.pem
-    ssl_key = </etc/letsencrypt/live/$PATH_NAME/privkey.pem
-}
+# Optional, with defaults
+MAIL_HOSTNAME=${MAIL_HOSTNAME:-$(hostname -f)}
+OTHER_HOSTS=${OTHER_HOSTS:-}
+LOCAL_RESOLVER=${LOCAL_RESOLVER:-no}
 
-EOF
-}
-#
-##
+CERTS=/etc/letsencrypt/live
+DB=/etc/mailsql/mail.sqlite
 
+# All TLS hostnames: this server's name first, then OTHER_HOSTS (commas to spaces)
+read -r -a HOSTS <<< "$MAIL_HOSTNAME ${OTHER_HOSTS//,/ }"
 
-# append required postmaster address for LMTP in dovecot
-#
-append_dovecot_lmtp_postmaster() {
-    local LMTP_DOMAIN=$1
-    cat <<EOF >> "$DOVECOT_LMTP_CONF"
-
-# Added by docker entrypoint
-protocol lmtp {
-  postmaster_address = postmaster@$LMTP_DOMAIN   # required
-}
-
-EOF
-}
-#
-##
-
-
-# Change ownership of vmail
-chown -R vmail:vmail /home/vmail
-
-## hash files from .domains.env
-# change ownership of domains config to root
-chown -R root:root .domains.env
-# hash postfix vmail_ssl.map text config
-cp .domains.env/vmail_ssl.map /etc/postfix/vmail_ssl.map
-#RUN postmap /etc/postfix/vmail_ssl.map
-postmap -F hash:/etc/postfix/vmail_ssl.map
-rm /etc/postfix/vmail_ssl.map
-# hash vmaps text
-cp .domains.env/vmaps /etc/postfix/vmaps
-postmap /etc/postfix/vmaps
-rm /etc/postfix/vmaps
-# hash postfix sasl_passwd text
-cp .domains.env/sasl_passwd /etc/postfix/sasl_passwd
-postmap /etc/postfix/sasl_passwd
-rm /etc/postfix/sasl_passwd
-# copy dovecot passwd text
-cp .domains.env/passwd /etc/dovecot/passwd
-##
-
-## Update postfix conf from hostname and env
-# Use system hostname passed by --hostname
-mailhost=$(hostname -f)
-# Strip subdomain from hostname to use as main mail domain
-maildomain=$(echo "$mailhost" | awk -F'.' '{ print $(NF-1)"."$NF }')
-
-# set postmaster address using maildomain in dovecot lmtp conf
-append_dovecot_lmtp_postmaster "$maildomain"
-
-# set new postconf myhostname value
-postconf -e "myhostname=$mailhost"
-# Set relay host from passed env file
-relayhost=$(echo "$RELAY_HOST")
-postconf -e "relayhost=$relayhost"
-
-## Setup SSL config in postfix and dovecot for all domains
-# Use env files to get additional domains
-ADDITIONAL_HOSTS=$(echo "$OTHER_HOSTS")
-# add localname config for mailbox domain first
-append_dovecot_localname "$mailhost" "mailbox"
-# Loop through the comma-separated domains
-virtualdomains=""
-virtualdomains+="${maildomain}"
-IFS=, read -ra ADDITIONAL_HOST_LIST <<< "$ADDITIONAL_HOSTS"
-for ADD_HOST in "${ADDITIONAL_HOST_LIST[@]}"
-  do
-    append_dovecot_localname "$ADD_HOST"
-    ADD_DOMAIN=$(echo "$ADD_HOST" | awk -F'.' '{ print $(NF-1)"."$NF }')
-    virtualdomains+=",${ADD_DOMAIN}"
+for h in "${HOSTS[@]}"; do
+  [ -r "$CERTS/$h/fullchain.pem" ] || { echo "entrypoint: no certificate in $CERTS/$h" >&2; exit 1; }
 done
-# Add combined virtual domains to postfix conf
-postconf -e "virtual_mailbox_domains=$virtualdomains"
-#
-##
 
+# --- database: created on first start, permissions fixed every start.
+# Group postfix: Postfix daemons drop extra groups and keep only their
+# main one, so proxymap can read the file only through group "postfix".
+# Dovecot's auth-worker runs as root. Only root writes.
+install -d -o root -g postfix -m 0750 /etc/mailsql
+# First start only (file missing or empty): load the schema.
+# -bail stops at the first error; a half-built file is removed so the
+# next start retries instead of running on a broken database.
+if [ ! -s "$DB" ]; then
+  sqlite3 -bail "$DB" < /usr/share/mailbox/schema.sql || { rm -f "$DB"; exit 1; }
+fi
+chown root:postfix "$DB"
+chmod 0640 "$DB"
 
-## Copy resolve.conf from system to postfix spool
-# is needed because it doesnt happen autmatically after booting image
-# See: https://superuser.com/a/975348
-cp /etc/resolv.conf /var/spool/postfix/etc/resolv.conf
-##
+# --- mail storage: the top folder only (restores run chown -R themselves)
+install -d -o vmail -g vmail -m 0750 /home/vmail
 
-### Final starup
-#
-# Finally run starup commands to launch supervisor
+# --- DNS: a local resolver, because Spamhaus refuses public resolvers
+if [ "$LOCAL_RESOLVER" = yes ]; then
+  unbound-anchor -a /var/lib/unbound/root.key || true   # exits 1 after an update
+  chown -f unbound:unbound /var/lib/unbound/root.key || true
+  printf '[program:unbound]\ncommand=/usr/sbin/unbound -d\npriority=10\nautorestart=true\nstdout_logfile=/dev/stdout\nstdout_logfile_maxbytes=0\nredirect_stderr=true\n' \
+    > /etc/supervisor/conf.d/unbound.conf
+  echo 'nameserver 127.0.0.1' > /etc/resolv.conf
+else
+  rm -f /etc/supervisor/conf.d/unbound.conf
+fi
+
+# --- Postfix (myhostname and mydomain default from the compose hostname;
+# relay credentials are read straight from the secret via texthash:)
+# All outbound mail goes to the relay from .env
+postconf -e "relayhost=$RELAY_HOST"
+# Default certificate (key, then chain) for this server's own hostname
+postconf -e "smtpd_tls_chain_files=$CERTS/$MAIL_HOSTNAME/privkey.pem, $CERTS/$MAIL_HOSTNAME/fullchain.pem"
+
+# Local mail (Postfix's notices to postmaster, anything for root) goes to
+# the postmaster@ alias in SQLite instead of /var/mail inside the container.
+printf 'postmaster: root\nroot: postmaster@%s\n' "$MAIL_DOMAIN" > /etc/aliases
+
+# Rebuild /etc/aliases.db from it (Postfix reads the .db, not the text file)
+newaliases
+
+: > /etc/postfix/vmail_ssl.map
+for h in "${HOSTS[@]}"; do
+  echo "$h $CERTS/$h/privkey.pem $CERTS/$h/fullchain.pem" >> /etc/postfix/vmail_ssl.map
+done
+postmap -F hash:/etc/postfix/vmail_ssl.map      # source kept for renewals
+
+# Postfix's chrooted services need copies of these files
+install -d /var/spool/postfix/etc
+for f in resolv.conf hosts services nsswitch.conf localtime; do
+  if [ -e "/etc/$f" ]; then cp -L "/etc/$f" "/var/spool/postfix/etc/$f"; fi
+done
+
+# --- Dovecot: default certificate, one per extra hostname, LMTP postmaster
+{
+  echo "# Written by /entrypoint on every start. Do not edit."
+  echo "ssl_cert = <$CERTS/$MAIL_HOSTNAME/fullchain.pem"
+  echo "ssl_key = <$CERTS/$MAIL_HOSTNAME/privkey.pem"
+  for h in "${HOSTS[@]:1}"; do
+    echo "local_name $h {"
+    echo "  ssl_cert = <$CERTS/$h/fullchain.pem"
+    echo "  ssl_key = <$CERTS/$h/privkey.pem"
+    echo "}"
+  done
+  echo "protocol lmtp {"
+  echo "  postmaster_address = postmaster@$MAIL_DOMAIN"
+  echo "}"
+} > /etc/dovecot/conf.d/99-generated.conf
+
 exec /usr/bin/supervisord -c /etc/supervisor/supervisord.conf
-
