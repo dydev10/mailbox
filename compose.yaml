@@ -5,7 +5,7 @@ services:
     container_name: mailbox
     hostname: mail.example.com          # public name of this server
     restart: unless-stopped
-    logging:                            # docker logs: keep the newest ~50 MB
+    logging:                            # docker logs: ~1M lines, ~40 MB on disk
       driver: json-file
       options:
         max-size: "10m"
