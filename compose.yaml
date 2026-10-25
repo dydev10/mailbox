@@ -11,6 +11,8 @@ services:
         max-size: "10m"
         max-file: "20"
         compress: "true"
+        # "blocking" never drop lines; use "non-blocking" only for network drivers
+        mode: "blocking"
     ports:
       - "25:25"     # inbound mail (postscreen)
       - "465:465"   # submission, implicit TLS
