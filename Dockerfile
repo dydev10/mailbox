@@ -74,8 +74,10 @@ COPY src/dovecot/ /etc/dovecot/
 # Copy entrypoint script
 COPY src/entrypoint /entrypoint
 
-# make entrypoint and import scripts executable
-RUN chmod +x /entrypoint /usr/share/mailbox/import/*.sh
+# Make the entrypoint and import scripts executable, and remove group/other
+# write (files keep the checkout's mode; Postfix warns about writable config).
+RUN chmod 0755 /entrypoint /usr/share/mailbox/import/*.sh \
+ && chmod -R go-w /etc/postfix /etc/dovecot /etc/supervisor /usr/share/mailbox
 
 # Start container with this entrypoint to set permission on mounted volumes and start supervisor
 ENTRYPOINT ["/entrypoint"]
