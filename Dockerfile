@@ -15,7 +15,7 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
   dovecot-core \
   dovecot-imapd \
   dovecot-lmtpd \
-  dovecot-sqlite
+  dovecot-sqlite \
 && rm -rf /var/lib/apt/lists/*
 
 
