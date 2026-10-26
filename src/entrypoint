@@ -42,7 +42,9 @@ install -d -o vmail -g vmail -m 0750 /home/vmail
 # --- DNS: a local resolver, because Spamhaus refuses public resolvers
 if [ "$LOCAL_RESOLVER" = yes ]; then
   unbound-anchor -a /var/lib/unbound/root.key || true   # exits 1 after an update
-  chown -f unbound:unbound /var/lib/unbound/root.key || true
+  # The key must exist, and unbound must own it to keep it updated
+  [ -s /var/lib/unbound/root.key ] || { echo "entrypoint: no unbound root key" >&2; exit 1; }
+  chown unbound:unbound /var/lib/unbound/root.key
   printf '[program:unbound]\ncommand=/usr/sbin/unbound -d\npriority=10\nautorestart=true\nstdout_logfile=/dev/stdout\nstdout_logfile_maxbytes=0\nredirect_stderr=true\n' \
     > /etc/supervisor/conf.d/unbound.conf
   echo 'nameserver 127.0.0.1' > /etc/resolv.conf
