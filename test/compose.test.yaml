@@ -1,0 +1,20 @@
+# Override for the local test (used by test/run.sh and test/clean.sh).
+# Paths are relative to the repo root. Needs Docker Compose 2.24 or later (!reset).
+services:
+  mailbox:
+    container_name: mailbox-test
+    hostname: mail.test.local
+    env_file: !reset []                    # never read the real .env
+    environment:
+      MAIL_DOMAIN: test.local
+      OTHER_HOSTS: ""
+      RELAY_HOST: "[relay.invalid]:2525"   # never resolves: nothing leaves the local machine
+      LOCAL_RESOLVER: "no"
+    volumes:
+      - ./test/.data/letsencrypt:/etc/letsencrypt:ro
+      - ./test/.data/vmail:/home/vmail
+      - ./test/.data/mailsql:/etc/mailsql
+
+secrets:
+  relay_sasl:
+    file: ./test/.data/relay_sasl          # empty: no relay in the local test
