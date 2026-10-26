@@ -1,6 +1,7 @@
 # Postfix 3.8 (Ubuntu 24.04) for dydev10/mailbox.
 # myhostname and mydomain default from the compose "hostname"; relayhost
-# and smtpd_tls_chain_files are set by /entrypoint on every start.
+# and smtpd_tls_chain_files are set by /entrypoint on every start: postconf -e
+# replaces their empty placeholder lines below in place.
 compatibility_level = 3.6
 smtpd_banner = $myhostname ESMTP
 biff = no
@@ -36,6 +37,7 @@ proxy_read_maps = $local_recipient_maps $mydestination $mynetworks
     $smtpd_sender_login_maps
 
 # --- outbound: everything goes through the relay, over TLS, with SASL
+relayhost =
 smtp_sasl_auth_enable = yes
 # One line, "[relay]:port user:password", from the compose secret. texthash:
 # needs no postmap; Postfix opens it as root before entering the chroot.
@@ -52,6 +54,8 @@ smtp_tls_CAfile = /etc/ssl/certs/ca-certificates.crt
 smtp_tls_session_cache_database = btree:${data_directory}/smtp_scache
 
 # --- inbound TLS; one certificate per hostname via SNI
+# Default certificate (key, then chain) for this server's own hostname
+smtpd_tls_chain_files =
 smtpd_tls_security_level = may
 smtpd_tls_auth_only = yes
 smtpd_tls_loglevel = 1
