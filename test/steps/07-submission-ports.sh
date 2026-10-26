@@ -23,6 +23,6 @@ expect_output "465: alice may not send as bob" \
     --from bob@test.local --to "$TEST_USER"
 
 expect_output "587: no relaying without a login" \
-  '^<\*\* +5[0-9][0-9] ' \
+  '^<[*~]\* +5[0-9][0-9] ' \
   send_mail --server localhost:587 --tls \
     --from "$TEST_USER" --to someone@gmail.com
