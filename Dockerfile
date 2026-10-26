@@ -65,7 +65,7 @@ COPY src/supervisord.conf /etc/supervisor/supervisord.conf
 ###
 
 # Copy sqlite files
-COPY src/sqlite/ /usr/share/mailbox
+COPY src/sqlite/ /usr/share/mailbox/
 
 # Copy postfix config files
 COPY src/postfix/ /etc/postfix/
