@@ -4,8 +4,7 @@ FROM ubuntu:24.04
 ARG DEBIAN_FRONTEND=noninteractive
 
 # Install supervisor and all mailbox dependencies
-RUN apt update && \
-  apt install -y \
+RUN apt-get update && apt-get install -y --no-install-recommends \
   supervisor \
   sqlite3 \
   ca-certificates \
