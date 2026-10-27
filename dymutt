@@ -1,0 +1,37 @@
+#!/bin/bash
+
+# Define colors
+RED='\e[31m'
+GREEN='\e[32m'
+YELLOW='\e[33m'
+BLUE='\e[34m'
+CYAN='\e[36m'
+RESET='\e[0m'  # Reset color
+
+# Prompt for email with colors
+echo -e "${BLUE}Enter your email:${RESET} \c"
+read EMAIL
+
+# Extract domain from email (add 'localhost' if missing)
+if [[ "$EMAIL" == *"@"* ]]; then
+    DOMAIN=$(echo "$EMAIL" | awk -F'@' '{print $2}')
+else
+    DOMAIN="localhost"
+fi
+
+# Construct the base IMAP URL
+IMAP_URL="imaps://$EMAIL@mail.$DOMAIN:993"
+
+# Display a confirmation message
+echo -e "${CYAN}Configuring NeoMutt for:${RESET} ${YELLOW}$EMAIL${RESET}"
+sleep 1  # Small delay for better user experience
+
+# Launch NeoMutt with dynamic settings
+neomutt -e "set folder=\"$IMAP_URL/\"" \
+        -e "set spoolfile=\"$IMAP_URL/INBOX\"" \
+        -e "set record=\"$IMAP_URL/Sent\"" \
+        -e "set trash=\"$IMAP_URL/Trash\"" \
+        -e "set postponed=\"$IMAP_URL/Drafts\"" \
+        -e "set from=\"$EMAIL\"" \
+        -e "set use_envelope_from=yes" \
+        -e "mailboxes \"$IMAP_URL/INBOX\" \"$IMAP_URL/Sent\" \"$IMAP_URL/Trash\" \"$IMAP_URL/Drafts\""
