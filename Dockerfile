@@ -3,11 +3,12 @@ FROM ubuntu:24.04
 # Build-time only: no installer prompts (not set in the running container)
 ARG DEBIAN_FRONTEND=noninteractive
 
-# Postfix + Dovecot with their SQLite modules, a local DNS resolver for
-# blocklist lookups, and supervisord to run all three in one container.
+# Postfix + Dovecot with their SQLite modules, the SASL plugins Postfix uses
+# to log in to the relay, a local DNS resolver for blocklist lookups, and
+# supervisord to run all three in one container.
 RUN apt-get update && apt-get install -y --no-install-recommends \
       supervisor sqlite3 ca-certificates unbound unbound-anchor \
-      postfix postfix-sqlite \
+      postfix postfix-sqlite libsasl2-modules \
       dovecot-core dovecot-imapd dovecot-lmtpd dovecot-sqlite \
  && rm -rf /var/lib/apt/lists/*
 
