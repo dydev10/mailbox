@@ -31,7 +31,7 @@ TEST_HASH=$(random_hash)
 
 sed -e "s|@DOMAIN@|$DOMAIN|g" -e "s|@ADMIN@|$ADMIN|g" \
     -e "s|@ADMIN_HASH@|$ADMIN_HASH|g" -e "s|@TEST_HASH@|$TEST_HASH|g" \
-    "$SEED_SQL" | sqlite3 -bail "$DB"
+    "$SEED_SQL" | sqlite3 -batch -bail "$DB"
 
 echo
 echo "Seeded $DOMAIN. The passwords are random and unknown; set them with:"
