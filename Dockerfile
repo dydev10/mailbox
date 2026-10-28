@@ -3,90 +3,38 @@ FROM ubuntu:24.04
 # Build-time only: no installer prompts (not set in the running container)
 ARG DEBIAN_FRONTEND=noninteractive
 
-# Install supervisor and all mailbox dependencies
+# Postfix + Dovecot with their SQLite modules, a local DNS resolver for
+# blocklist lookups, and supervisord to run all three in one container.
 RUN apt-get update && apt-get install -y --no-install-recommends \
-  supervisor \
-  sqlite3 \
-  ca-certificates \
-  unbound \
-  unbound-anchor \
-  postfix \
-  postfix-sqlite \
-  dovecot-core \
-  dovecot-imapd \
-  dovecot-lmtpd \
-  dovecot-sqlite \
-&& rm -rf /var/lib/apt/lists/*
+      supervisor sqlite3 ca-certificates unbound unbound-anchor \
+      postfix postfix-sqlite \
+      dovecot-core dovecot-imapd dovecot-lmtpd dovecot-sqlite \
+ && rm -rf /var/lib/apt/lists/*
 
-
-# Create virtual mailbox vmail user and group
-RUN groupadd -g 5000 vmail && \
-  useradd \
-    -M \
-    -u 5000 \
-    -g 5000 \
-    -d /home/vmail \
-    -s /usr/sbin/nologin \
-    vmail
-## ownership for mounted vmail dir will granted in entrypoint script for persistent storage
+# vmail (uid/gid 5000) owns the Maildirs.
+RUN groupadd -g 5000 vmail \
+ && useradd -u 5000 -g 5000 -d /home/vmail -M -s /usr/sbin/nologin vmail
 
 # Turn on foreign keys in every interactive sqlite3 session as root.
 RUN echo 'PRAGMA foreign_keys = ON;' > /root/.sqliterc
 
-## Copy usefull scripts
-# to list active ports
-#COPY procnet ./
-##
-
-## supervisor setup
-# Create log directory
-#RUN mkdir -p /var/log/supervisor
-# Copy Supervisor config
+# Repo files last: they change most often, so the steps above stay cached.
 COPY src/supervisord.conf /etc/supervisor/supervisord.conf
-##
-
-### postfix dovecot setup
-## Create private folders with postfix and dovecot access groups
-#RUN mkdir -p /etc/postfix/private
-#RUN mkdir -p /etc/dovecot/private
-#RUN chgrp postfix /etc/postfix/private
-#RUN chgrp dovecot /etc/dovecot/private
-###
-
-### DB setup, will be used later
-## Copy the schema.sql script into the container
-#COPY src/sqlite/schema.sql /tmp/schema.sql
-## Initialize the SQLite database
-#RUN sqlite3 -init /tmp/schema.sql /etc/postfix/private/mail.sqlite ".exit"
-## HardLink to postfix db file for dovecot
-#RUN ln -vi /etc/postfix/private/mail.sqlite /etc/dovecot/private/mail.sqlite
-## Clean up the SQL script
-#RUN rm /tmp/schema.sql
-###
-
-# Copy sqlite files
-COPY src/sqlite/ /usr/share/mailbox/
-
-# Copy postfix config files
 COPY src/postfix/ /etc/postfix/
 COPY src/dovecot/ /etc/dovecot/
-
-# Copy entrypoint script
+COPY src/sqlite/ /usr/share/mailbox/
 COPY src/entrypoint /entrypoint
+COPY src/mbox/ /usr/local/lib/mbox/
 
-# Make the entrypoint and import scripts executable, and remove group/other
-# write (files keep the checkout's mode; Postfix warns about writable config).
+# Make the scripts executable, put the mbox admin tool on the PATH, and
+# remove group/other write (files keep the checkout's mode; Postfix warns
+# about writable config).
 RUN chmod 0755 /entrypoint /usr/share/mailbox/import/*.sh \
- && chmod -R go-w /etc/postfix /etc/dovecot /etc/supervisor /usr/share/mailbox
+               /usr/local/lib/mbox/mbox /usr/local/lib/mbox/utils/*.sh \
+ && ln -s /usr/local/lib/mbox/mbox /usr/local/bin/mbox \
+ && chmod -R go-w /etc/postfix /etc/dovecot /etc/supervisor /usr/share/mailbox \
+                  /usr/local/lib/mbox
 
-# Start container with this entrypoint to set permission on mounted volumes and start supervisor
-ENTRYPOINT ["/entrypoint"]
-VOLUME ["/home/vmail", "/etc/mailsql"]
-
-# Only for documentation: should expose ports (SMTP, IMAP, Relay)
-#EXPOSE 25 587 143 2525
 EXPOSE 25 465 587 993
-
-##
-## END Dockerfile
-
+VOLUME ["/home/vmail", "/etc/mailsql"]
+ENTRYPOINT ["/entrypoint"]
