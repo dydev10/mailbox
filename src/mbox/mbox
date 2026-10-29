@@ -14,6 +14,7 @@ show_help() {
   echo "                             mailboxes, postmaster@ and abuse@ to the admin"
   echo "  mbox adduser               add a mailbox: pick a domain, then name and password"
   echo "  mbox passwd USER@DOMAIN    set a new password (also for a forgotten one)"
+  echo "  mbox users [DOMAIN]        list the mailboxes and aliases"
   echo "  mbox help                  this list"
   echo
   echo "Run mbox with no arguments for a menu."
@@ -24,6 +25,7 @@ show_menu() {
   echo "  1) Seed a domain"
   echo "  2) Add a mailbox"
   echo "  3) Forgot password / set a password"
+  echo "  4) List users"
   echo "  q) Quit"
   read -r -p "Choose: " choice
 
@@ -40,6 +42,9 @@ show_menu() {
       read -r -p "Address (user@domain): " email
       "$UTILS/passwd.sh" "$email"
       ;;
+    4)
+      "$UTILS/users.sh"
+      ;;
   esac
 }
 
@@ -48,6 +53,7 @@ case "$command" in
   seed)    shift; "$UTILS/seed.sh" "$@" ;;
   adduser) "$UTILS/adduser.sh" ;;
   passwd)  shift; "$UTILS/passwd.sh" "$@" ;;
+  users)   shift; "$UTILS/users.sh" "$@" ;;
   help)    show_help ;;
   "")      if [ -t 0 ]; then show_menu; else show_help; fi ;;   # menu only in a terminal
   *)       show_help >&2; exit 1 ;;
