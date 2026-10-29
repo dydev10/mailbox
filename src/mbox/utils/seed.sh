@@ -1,25 +1,22 @@
-#!/bin/sh
+#!/bin/bash
 # Seed a new domain: admin@ and test@ mailboxes with random passwords that
 # nobody knows, plus postmaster@ and abuse@ aliases to the admin.
 # Then set the real passwords with "mbox passwd". Safe to run again:
 # existing rows are kept as they are.
 #
 # Usage: mbox seed DOMAIN [ADMIN_LOCALPART]
-#   DB=/path/to/copy.sqlite mbox seed ...   to try it on a copy first
-set -eu
-[ $# -ge 1 ] && [ $# -le 2 ] || { echo "usage: mbox seed DOMAIN [ADMIN]" >&2; exit 1; }
-DOMAIN=$(printf %s "$1" | tr 'A-Z' 'a-z')
-ADMIN=$(printf %s "${2:-admin}" | tr 'A-Z' 'a-z')
-DB=${DB:-/etc/mailsql/mail.sqlite}
+set -euo pipefail
+. "$(dirname "$0")/common.sh"
+[ $# -ge 1 ] && [ $# -le 2 ] || die "usage: mbox seed DOMAIN [ADMIN]"
+DOMAIN=$(lowercase "$1")
+ADMIN=$(lowercase "${2:-admin}")
 SEED_SQL=${SEED_SQL:-$(dirname "$0")/seed.sql}
 
 # Only plain names: they go straight into the SQL
-echo "$DOMAIN" | grep -Eq '^[a-z0-9]([a-z0-9-]*[a-z0-9])?(\.[a-z0-9]([a-z0-9-]*[a-z0-9])?)+$' \
-  || { echo "mbox seed: not a domain name: $DOMAIN" >&2; exit 1; }
-echo "$ADMIN" | grep -Eq '^[a-z0-9][a-z0-9._-]*$' \
-  || { echo "mbox seed: not a local part: $ADMIN" >&2; exit 1; }
+validate_domain "$DOMAIN" || die "not a domain name: $DOMAIN"
+validate_localpart "$ADMIN" || die "not a user name: $ADMIN"
 case $ADMIN in
-  test|postmaster|abuse) echo "mbox seed: the admin mailbox cannot be $ADMIN@" >&2; exit 1 ;;
+  test|postmaster|abuse) die "the admin mailbox cannot be $ADMIN@" ;;
 esac
 
 # A password nobody knows: 24 random bytes, hashed, and never shown
@@ -31,7 +28,7 @@ TEST_HASH=$(random_hash)
 
 sed -e "s|@DOMAIN@|$DOMAIN|g" -e "s|@ADMIN@|$ADMIN|g" \
     -e "s|@ADMIN_HASH@|$ADMIN_HASH|g" -e "s|@TEST_HASH@|$TEST_HASH|g" \
-    "$SEED_SQL" | sqlite3 -batch -bail "$DB"
+    "$SEED_SQL" | sql
 
 echo
 echo "Seeded $DOMAIN. The passwords are random and unknown; set them with:"
