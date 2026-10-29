@@ -17,6 +17,10 @@ inet_interfaces = all
 inet_protocols = ipv4
 recipient_delimiter = +
 mailbox_size_limit = 0
+# Largest message accepted, in or out: 25 MB, matching Mailgun and Gmail
+# (the default is 10 MB). Attachments grow ~1/3 when encoded, so this
+# carries an attachment of about 18 MB.
+message_size_limit = 26214400
 alias_maps = hash:/etc/aliases
 alias_database = hash:/etc/aliases
 
